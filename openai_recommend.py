@@ -82,13 +82,15 @@ def get_travel_recommendations(city_name, user_request=None, existing_places=Non
 
 
 
+import urllib.parse
+
 def extract_recommendations(content):
-    """Parses OpenAI's response into structured places & restaurants without mixing them up."""
+    """Parses OpenAI's response into structured places & restaurants with correct Google Maps links."""
     lines = content.split("\n")
 
     places = []
     restaurants = []
-    is_places = False  # Start with False to prevent accidental misclassification
+    is_places = False
     is_restaurants = False
 
     for line in lines:
@@ -96,23 +98,25 @@ def extract_recommendations(content):
         if not line or line == "\n":  
             continue  # ✅ Skip empty lines
 
-        # ✅ Detect start of "places to visit"
         if "**Top 5 Places to Visit:**" in line:
             is_places = True
             is_restaurants = False
-            continue  # Skip the title line
+            continue  
 
-        # ✅ Detect start of "restaurants"
         if "**Top 5 Restaurants to Try:**" in line:
             is_places = False
             is_restaurants = True
-            continue  # Skip the title line
-
+            continue  
 
         if is_places:
-            places.append(line)
+            place_name = line.split(" - ")[0][3:].strip()  # Extract place name
+            google_maps_link = f"https://www.google.com/maps/search/?api=1&query={urllib.parse.quote(place_name)}"
+            places.append(f"{line} - <a href='{google_maps_link}' target='_blank'>🔗</a>")
+
         elif is_restaurants:
-            restaurants.append(line)
+            restaurant_name = line.split(" - ")[0][3:].strip()  # Extract restaurant name
+            google_maps_link = f"https://www.google.com/maps/search/?api=1&query={urllib.parse.quote(restaurant_name)}"
+            restaurants.append(f"{line} - <a href='{google_maps_link}' target='_blank'>🔗</a>")
 
     return {
         "places": places[:5],  # ✅ Ensure exactly 5 items

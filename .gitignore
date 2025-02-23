@@ -1,5 +1,6 @@
 # Ignore environment files
 .venv
+.env
 
 # Ignore system and dependency files
 __pycache__/
